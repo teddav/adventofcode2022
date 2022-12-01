@@ -1,0 +1,11 @@
+To run:
+
+```
+cargo run --bin dayXX
+```
+
+or
+
+```
+cargo watch -x "run --bin dayXX"
+```

@@ -18,7 +18,7 @@ pub fn main() -> io::Result<()> {
 
     // PART 1
     let max = summed_calories.iter().max().unwrap();
-    println!("MAX: {max}");
+    println!("MAX:  {max}");
 
     // PART 2
     summed_calories.sort_by(|a, b| b.cmp(a));
