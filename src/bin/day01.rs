@@ -9,7 +9,7 @@ pub fn main() -> io::Result<()> {
         .iter()
         .map(|e| {
             e.split('\n')
-                .map(|e| e.parse().expect(format!("cannot unwrap {e}").as_str()))
+                .filter_map(|e| e.parse().ok())
                 .collect::<Vec<u32>>()
                 .iter()
                 .sum()
@@ -17,7 +17,7 @@ pub fn main() -> io::Result<()> {
         .collect();
 
     // PART 1
-    let max = summed_calories.iter().max().unwrap();
+    let max = summed_calories.iter().max().expect("cannot compute max");
     println!("MAX:  {max}");
 
     // PART 2
