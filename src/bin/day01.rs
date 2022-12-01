@@ -1,9 +1,8 @@
-use std::fs;
-use std::path::Path;
+use adventofcode::read_file;
+use std::io;
 
-pub fn run() {
-    let path = Path::new("src").join("day1").join("input");
-    let contents = fs::read_to_string(path).expect("cant read file");
+pub fn main() -> io::Result<()> {
+    let contents = read_file("01")?;
 
     let elves: Vec<&str> = contents.trim().split("\n\n").collect();
     let mut summed_calories: Vec<u32> = elves
@@ -25,4 +24,6 @@ pub fn run() {
     summed_calories.sort_by(|a, b| b.cmp(a));
     let top3 = summed_calories[0..3].to_vec().iter().sum::<u32>();
     println!("TOP3: {top3}");
+
+    Ok(())
 }
