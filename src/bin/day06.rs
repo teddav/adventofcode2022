@@ -3,11 +3,11 @@ use std::collections::HashSet;
 
 fn main() {
     let file = read_file("06").expect("cant read file");
-    println!("Part1: {}", part1(&file, 4));
-    println!("Part2: {}", part1(&file, 14));
+    println!("Part1: {}", run(&file, 4));
+    println!("Part2: {}", run(&file, 14));
 }
 
-fn part1(buffer: &str, marker_size: usize) -> usize {
+fn run(buffer: &str, marker_size: usize) -> usize {
     let buffer: Vec<char> = buffer.chars().collect();
     let mut index = marker_size - 1;
     let len = buffer.len();
@@ -39,7 +39,7 @@ zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw
         let result: Vec<usize> = example_input
             .split('\n')
             .filter(|buffer| !buffer.is_empty())
-            .map(|buffer| part1(buffer, 4))
+            .map(|buffer| run(buffer, 4))
             .collect();
 
         assert_eq!(result, [7, 5, 6, 10, 11]);
@@ -50,7 +50,7 @@ zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw
         let result: Vec<usize> = example_input
             .split('\n')
             .filter(|buffer| !buffer.is_empty())
-            .map(|buffer| part1(buffer, 14))
+            .map(|buffer| run(buffer, 14))
             .collect();
 
         assert_eq!(result, [19, 23, 23, 29, 26]);
