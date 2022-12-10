@@ -178,6 +178,7 @@ $ ls
         assert_eq!(result, 95437);
     }
 
+    #[test]
     fn test_part2() {
         let filesystem = parse_input(example_input);
         let (_, result) = run(&filesystem);

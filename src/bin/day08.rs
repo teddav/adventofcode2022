@@ -142,6 +142,7 @@ mod tests {
         assert_eq!(result, 21);
     }
 
+    #[test]
     fn test_part2() {
         let input = example_input
             .trim()
