@@ -8,3 +8,4 @@ default-run = "day01"
 
 [dependencies]
 regex = "1.7.0"
+pathfinding = "4.0.0"
