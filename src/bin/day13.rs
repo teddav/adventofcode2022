@@ -132,7 +132,7 @@ fn part2(packets: &Vec<Packet>) -> usize {
     let divider1 = parse_packet(&"[[2]]".chars().collect());
     let divider2 = parse_packet(&"[[6]]".chars().collect());
 
-    let mut sorted_packets = (*packets).clone();
+    let mut sorted_packets = packets.clone();
     sorted_packets.push(divider1.clone());
     sorted_packets.push(divider2.clone());
     sorted_packets.sort_by(|a, b| compare_packets(a, b));
