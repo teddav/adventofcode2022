@@ -88,7 +88,7 @@ fn part2(valves: &HashMap<String, Valve>) -> u64 {
     let mut result = 0;
     for (k1, flow1) in &unique_solutions {
         for (k2, flow2) in &unique_solutions {
-            if k1.0.intersection(&k2.0).collect::<HashSet<_>>().len() == 0 {
+            if k1.0.is_disjoint(&k2.0) {
                 if flow1 + flow2 > result {
                     result = flow1 + flow2;
                 }
