@@ -1,7 +1,9 @@
 use adventofcode::read_file;
 use regex::Regex;
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::sync::{mpsc, Arc, Mutex};
 use std::time::Instant;
+use std::{mem, thread};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 enum Rock {
@@ -11,7 +13,7 @@ enum Rock {
     Geode,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Blueprint {
     index: u32,
     costs: HashMap<Rock, HashMap<Rock, u32>>,
@@ -86,10 +88,17 @@ fn parse_input(input: &str) -> Vec<Blueprint> {
 
 fn part1(blueprints: &Vec<Blueprint>) -> u32 {
     let time = 24;
-    blueprints
-        .iter()
-        .map(|bp| bp.index * run_blueprint(bp, time))
-        .sum()
+    // blueprints
+    //     .iter()
+    //     .map(|bp| bp.index * run_blueprint(bp, time))
+    //     .sum()
+    let (sender, receiver) = mpsc::channel();
+    for bp in blueprints.clone() {
+        let sender = sender.clone();
+        thread::spawn(move || sender.send(bp.index * run_blueprint(&bp, time)).unwrap());
+    }
+    mem::drop(sender);
+    receiver.iter().sum()
 }
 
 /*
@@ -99,15 +108,33 @@ https://github.com/mebeim/aoc/blob/master/2022/README.md#day-19---not-enough-min
 */
 fn part2(blueprints: &Vec<Blueprint>) -> u32 {
     let time = 32;
-    blueprints
-        .iter()
-        .filter(|bp| bp.index <= 3)
-        .map(|bp| {
-            let res = run_blueprint(bp, time);
-            println!("{} -> {}", bp.index, res);
-            res
-        })
-        .fold(1, |acc, v| acc * v)
+    // blueprints
+    //     .iter()
+    //     .filter(|bp| bp.index <= 3)
+    //     .map(|bp| {
+    //         let res = run_blueprint(bp, time);
+    //         println!("{} -> {}", bp.index, res);
+    //         res
+    //     })
+    //     .fold(1, |acc, v| acc * v)
+
+    let result = Arc::new(Mutex::new(1));
+    let mut handles = vec![];
+    for bp in blueprints.iter().filter(|bp| bp.index <= 3).cloned() {
+        let result = Arc::clone(&result);
+        handles.push(thread::spawn(move || {
+            let res = run_blueprint(&bp, time);
+            let mut guard = result.lock().unwrap();
+            *guard *= res;
+        }));
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    let result = *result.lock().unwrap();
+    result
 }
 
 fn run_blueprint(bp: &Blueprint, time: u32) -> u32 {
