@@ -15,7 +15,7 @@ fn main() {
     let game = parse_input(&file);
 
     let start = Instant::now();
-    let result = part1(game);
+    let result = part2(game);
     let duration = start.elapsed();
     println!("Time elapsed: {:?}", duration);
     println!("RESULT: {result}");
@@ -121,6 +121,64 @@ fn parse_input(input: &str) -> Game {
     }
 }
 
+fn part2(game: Game) -> usize {
+    let Game {
+        current: start,
+        max_x,
+        max_y,
+        blizzards,
+        end,
+        directions,
+    } = game;
+
+    let mut paths_taken = VecDeque::from([(start, 0)]);
+    let all_blizzards = get_all_blizzards_positions(blizzards, &directions, max_x, max_y);
+    let all_blizzards_count = all_blizzards.len();
+    println!("all_blizzards_count: {all_blizzards_count}");
+    let mut already_seen: Vec<(Position, usize)> = vec![];
+
+    let mut goal = end;
+    let mut finish = false;
+
+    'main: loop {
+        if let Some((current_position, moves_count)) = paths_taken.pop_front() {
+            let count = (moves_count + 1) % all_blizzards_count;
+            let current_blizzards = &all_blizzards[count];
+            // print_map(&current_blizzards, &directions, (max_x, max_y));
+
+            if !already_seen.contains(&(current_position, count)) {
+                already_seen.push((current_position, count));
+
+                for pos in next_positions(
+                    &current_position,
+                    &current_blizzards,
+                    (max_x, max_y),
+                    &end,
+                    Some(&goal),
+                ) {
+                    if pos == goal {
+                        println!("Reached goal !! {moves_count}");
+                        paths_taken = VecDeque::from([(goal, moves_count + 1)]);
+                        already_seen = vec![];
+
+                        if goal == end && finish {
+                            break 'main moves_count + 1;
+                        }
+                        goal = if goal == end { start } else { end };
+                        finish = true;
+                        continue 'main;
+                    }
+
+                    paths_taken.push_back((pos, moves_count + 1));
+                }
+            }
+        } else {
+            println!("no more paths...");
+            break 0;
+        }
+    }
+}
+
 fn part1(game: Game) -> usize {
     let Game {
         current: start,
@@ -146,9 +204,13 @@ fn part1(game: Game) -> usize {
             if !already_seen.contains(&(current_position, count)) {
                 already_seen.push((current_position, count));
 
-                for pos in
-                    next_positions(&current_position, &current_blizzards, (max_x, max_y), &end)
-                {
+                for pos in next_positions(
+                    &current_position,
+                    &current_blizzards,
+                    (max_x, max_y),
+                    &end,
+                    None,
+                ) {
                     if pos == end {
                         break 'main (moves_count + 1);
                     }
@@ -219,9 +281,13 @@ fn next_positions(
     blizzards: &Vec<Position>,
     max: (u8, u8),
     end: &Position,
+    goal: Option<&Position>,
 ) -> Vec<Position> {
     if current == &Position(0, 0) {
         return vec![Position(0, 1)];
+    }
+    if current == end {
+        return vec![Position(current.0, current.1 - 1)];
     }
 
     let mut positions = vec![];
@@ -242,6 +308,14 @@ fn next_positions(
     // here we need to check if we can reach `end` position
     if current.1 < max.1 || end == &Position(current.0, current.1 + 1) {
         positions.push(Position(current.0, current.1 + 1));
+    }
+
+    if let Some(goal) = goal {
+        if goal == &Position(current.0, current.1 + 1) {
+            positions.push(Position(current.0, current.1 + 1));
+        } else if goal == &Position(current.0, current.1 - 1) {
+            positions.push(Position(current.0, current.1 - 1));
+        }
     }
 
     // we also have the option not to move and to stay at the same spot
@@ -275,9 +349,22 @@ mod tests {
         let start = Instant::now();
         let result = part1(game);
         let duration = start.elapsed();
-        println!("Time elapsed: {:?}", duration);
+        println!("Time elapsed 1: {:?}", duration);
 
-        println!("RESULT: {result}");
-        assert_eq!(result, 18)
+        println!("RESULT 1: {result}");
+        assert_eq!(result, 18);
+    }
+
+    #[test]
+    fn test_part2() {
+        let game = parse_input(&example);
+
+        let start = Instant::now();
+        let result = part2(game);
+        let duration = start.elapsed();
+        println!("Time elapsed 2: {:?}", duration);
+
+        println!("RESULT 2: {result}");
+        assert_eq!(result, 54);
     }
 }
