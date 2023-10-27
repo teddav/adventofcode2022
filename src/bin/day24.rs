@@ -1,6 +1,7 @@
 use adventofcode::read_file;
 use regex::Regex;
 use std::collections::VecDeque;
+use std::time::Instant;
 
 fn main() {
     let day = Regex::new(r".*day(\d+).*")
@@ -12,7 +13,12 @@ fn main() {
         .as_str();
     let file = read_file(day).unwrap();
     let game = parse_input(&file);
-    part1(game);
+
+    let start = Instant::now();
+    let result = part1(game);
+    let duration = start.elapsed();
+    println!("Time elapsed: {:?}", duration);
+    println!("RESULT: {result}");
 }
 
 #[derive(Debug)]
@@ -25,7 +31,7 @@ struct Game {
     blizzards: Vec<Position>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 struct Position(u8, u8);
 
 #[derive(Debug)]
@@ -44,6 +50,15 @@ impl Direction {
             'v' => Direction::Down,
             '^' => Direction::Up,
             _ => panic!("wrong direction"),
+        }
+    }
+
+    fn to_arrow(&self) -> char {
+        match self {
+            Direction::Up => '^',
+            Direction::Down => 'v',
+            Direction::Left => '<',
+            Direction::Right => '>',
         }
     }
 
@@ -106,7 +121,7 @@ fn parse_input(input: &str) -> Game {
     }
 }
 
-fn part1(game: Game) -> u32 {
+fn part1(game: Game) -> usize {
     let Game {
         current: start,
         max_x,
@@ -115,26 +130,88 @@ fn part1(game: Game) -> u32 {
         end,
         directions,
     } = game;
-    let mut paths_taken = VecDeque::from([(start, blizzards, 0)]);
 
-    let moves = 'main: loop {
-        if let Some((current_position, blizzards, moves_count)) = paths_taken.pop_front() {
-            let mut blizzards = blizzards;
-            for i in 0..blizzards.len() {
-                directions[i].shift(&mut blizzards[i], (max_x, max_y));
-            }
+    let mut paths_taken = VecDeque::from([(start, 0)]);
+    let all_blizzards = get_all_blizzards_positions(blizzards, &directions, max_x, max_y);
+    let all_blizzards_count = all_blizzards.len();
+    println!("all_blizzards_count: {all_blizzards_count}");
+    let mut already_seen: Vec<(Position, usize)> = vec![];
 
-            for pos in next_positions(&current_position, &blizzards, (max_x, max_y), &end) {
-                if pos == end {
-                    break 'main (moves_count + 1);
+    'main: loop {
+        if let Some((current_position, moves_count)) = paths_taken.pop_front() {
+            let count = (moves_count + 1) % all_blizzards_count;
+            let current_blizzards = &all_blizzards[count];
+            // print_map(&current_blizzards, &directions, (max_x, max_y));
+
+            if !already_seen.contains(&(current_position, count)) {
+                already_seen.push((current_position, count));
+
+                for pos in
+                    next_positions(&current_position, &current_blizzards, (max_x, max_y), &end)
+                {
+                    if pos == end {
+                        break 'main (moves_count + 1);
+                    }
+
+                    paths_taken.push_back((pos, moves_count + 1));
                 }
+            }
+        } else {
+            println!("no more paths...");
+            break 0;
+        }
+    }
+}
 
-                paths_taken.push_back((pos, blizzards.clone(), moves_count + 1));
+fn print_map(blizzards: &Vec<Position>, directions: &Vec<Direction>, max: (u8, u8)) {
+    let mut lines: Vec<Vec<char>> = vec![];
+    for _ in 0..max.1 {
+        let s = "."
+            .repeat((max.0 + 1) as usize)
+            .chars()
+            .collect::<Vec<char>>();
+        lines.push(s);
+    }
+    for (i, c) in blizzards.iter().enumerate() {
+        let value = lines[(c.1 - 1) as usize][(c.0) as usize];
+        if value == '.' {
+            lines[(c.1 - 1) as usize][(c.0) as usize] = directions[i].to_arrow();
+        } else {
+            if let Ok(value) = value.to_string().parse::<u8>() {
+                lines[(c.1 - 1) as usize][(c.0) as usize] = (value + 1) as char;
+            } else {
+                lines[(c.1 - 1) as usize][(c.0) as usize] = '2';
             }
         }
-    };
+    }
+    for line in lines {
+        println!("{}", line.iter().collect::<String>());
+    }
+    println!("{}", "-".repeat((max.0 + 1) as usize));
+}
 
-    moves
+fn get_all_blizzards_positions(
+    start: Vec<Position>,
+    directions: &Vec<Direction>,
+    max_x: u8,
+    max_y: u8,
+) -> Vec<Vec<Position>> {
+    let mut all_blizzards = vec![start.clone()];
+    let mut current = start.clone();
+
+    loop {
+        for b in 0..current.len() {
+            directions[b].shift(&mut current[b], (max_x, max_y));
+        }
+        if current == start {
+            break;
+        }
+        all_blizzards.push(current.clone());
+    }
+    // for b in all_blizzards.clone() {
+    //     print_map(&b, directions, (max_x, max_y));
+    // }
+    all_blizzards
 }
 
 fn next_positions(
@@ -166,29 +243,20 @@ fn next_positions(
     if current.1 < max.1 || end == &Position(current.0, current.1 + 1) {
         positions.push(Position(current.0, current.1 + 1));
     }
-    // let positions: Vec<Position> = positions
-    //     .iter()
-    //     .filter(|pos| !blizzards.contains(pos))
-    //     .cloned()
-    //     .collect();
-    for blizzard in blizzards {
-        positions.retain(|p| p != blizzard);
-        if positions.len() == 0 {
-            break;
-        }
-    }
 
-    if positions.len() == 0 {
-        vec![current.clone()]
-    } else {
-        positions
-    }
+    // we also have the option not to move and to stay at the same spot
+    positions.push(current.clone());
+
+    positions
+        .iter()
+        .filter(|pos| !blizzards.contains(pos))
+        .cloned()
+        .collect()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::Instant;
 
     const example: &str = "
 #.######
@@ -202,6 +270,7 @@ mod tests {
     #[test]
     fn test_part1() {
         let game = parse_input(&example);
+        // println!("game: {game:#?}");
 
         let start = Instant::now();
         let result = part1(game);
