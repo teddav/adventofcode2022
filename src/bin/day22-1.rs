@@ -1,23 +1,6 @@
 use adventofcode::read_file;
 use regex::Regex;
 
-const example: &str = "
-        ...#
-        .#..
-        #...
-        ....
-...#.......#
-........#...
-..#....#....
-..........#.
-        ...#....
-        .....#..
-        .#......
-        ......#.
-
-10R5L5R10L4R5L5
-";
-
 #[derive(Debug)]
 enum Path {
     Steps(u32),
@@ -47,8 +30,7 @@ fn main() {
         .as_str();
     let file = read_file(day).unwrap();
 
-    let (map, path) = parse_input(&example);
-
+    let (map, path) = parse_input(&file);
     let result1 = part1(&map, &path);
     println!("Part1: {result1}");
 }
@@ -81,10 +63,8 @@ fn walk(map: &Vec<Vec<Tile>>, start: &Position, direction: char, mut steps: u32)
     };
 
     let step = match direction {
-        'U' => -1,
-        'L' => -1,
-        'D' => 1,
-        'R' => 1,
+        'U' | 'L' => -1,
+        'D' | 'R' => 1,
         _ => panic!("wrong direction"),
     };
 
@@ -167,4 +147,33 @@ fn parse_input(input: &str) -> (Vec<Vec<Tile>>, Vec<Path>) {
     }
 
     (map, path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const example: &str = "
+        ...#
+        .#..
+        #...
+        ....
+...#.......#
+........#...
+..#....#....
+..........#.
+        ...#....
+        .....#..
+        .#......
+        ......#.
+
+10R5L5R10L4R5L5
+";
+
+    #[test]
+    fn test_part1() {
+        let (map, path) = parse_input(&example);
+        let result1 = part1(&map, &path);
+        assert_eq!(result1, 6032);
+    }
 }
