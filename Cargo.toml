@@ -2,7 +2,6 @@
 name = "adventofcode"
 version = "0.1.0"
 edition = "2021"
-default-run = "adventofcode"
 
 [dependencies]
 regex = "1.7.0"
